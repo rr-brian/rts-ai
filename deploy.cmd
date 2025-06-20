@@ -33,13 +33,13 @@ IF NOT DEFINED KUDU_SYNC_CMD (
   SET KUDU_SYNC_CMD=kudusync
 )
 
-:: 1. Build the React app
-echo Building React app...
-call :ExecuteCmd npm install --production=false
-IF !ERRORLEVEL! NEQ 0 goto error
+:: 1. Check if build directory exists
+IF NOT EXIST "%DEPLOYMENT_SOURCE%\build" (
+  echo Error: Build directory not found. Please run 'npm run build' locally before deploying.
+  goto error
+)
 
-call :ExecuteCmd npm run build
-IF !ERRORLEVEL! NEQ 0 goto error
+echo Using pre-built React app from build directory...
 
 :: 2. KuduSync - Copy build files to deployment target
 echo Syncing build files to deployment target...
@@ -51,10 +51,15 @@ echo Copying web.config to deployment target...
 call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\web.config" "%DEPLOYMENT_TARGET%\web.config"
 IF !ERRORLEVEL! NEQ 0 goto error
 
-:: 4. Install server dependencies
-echo Installing server dependencies...
+:: 4. Copy server.js to deployment target
+echo Copying server.js to deployment target...
+call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\server.js" "%DEPLOYMENT_TARGET%\server.js"
+IF !ERRORLEVEL! NEQ 0 goto error
+
+:: 5. Install minimal server dependencies
+echo Installing minimal server dependencies...
 call :ExecuteCmd cd "%DEPLOYMENT_TARGET%"
-call :ExecuteCmd npm install --only=production
+call :ExecuteCmd npm install express path --save
 IF !ERRORLEVEL! NEQ 0 goto error
 
 :: Finished successfully
