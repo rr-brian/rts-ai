@@ -5,9 +5,9 @@ echo Starting deployment...
 :: Setup
 setlocal enabledelayedexpansion
 
-:: 1. KuduSync - Copy pre-built files from build directory
-echo Syncing pre-built files to deployment target...
-call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%DEPLOYMENT_SOURCE%\build" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.hg;.deployment;deploy.cmd;node_modules"
+:: 1. KuduSync - Copy all files from source to target
+echo Syncing all files to deployment target...
+call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%DEPLOYMENT_SOURCE%" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.hg;.deployment;deploy.cmd"
 IF !ERRORLEVEL! NEQ 0 goto error
 
 :: 2. Copy server.js to deployment target
