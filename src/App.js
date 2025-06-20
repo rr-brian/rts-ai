@@ -1,27 +1,42 @@
 import React, { useState } from 'react';
 import './App.css';
+import { sendMessageToAzureOpenAI } from './services/azureOpenAI';
 
 function App() {
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || isLoading) return;
     
     // Add user message to chat history
-    setChatHistory([...chatHistory, { role: 'user', content: message }]);
+    const userMessage = { role: 'user', content: message };
+    setChatHistory([...chatHistory, userMessage]);
+    setMessage('');
+    setIsLoading(true);
     
-    // Placeholder for Azure OpenAI API call
-    // This will be replaced with actual API call later
-    setTimeout(() => {
+    try {
+      // Prepare the messages array for the API call
+      // Include conversation history for context
+      const messages = [...chatHistory, userMessage];
+      
+      // Call Azure OpenAI service
+      const aiResponse = await sendMessageToAzureOpenAI(messages);
+      
+      // Add AI response to chat history
+      setChatHistory(prev => [...prev, aiResponse]);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      // Add error message to chat history
       setChatHistory(prev => [...prev, { 
         role: 'assistant', 
-        content: 'This is a placeholder response. Azure OpenAI integration will be added later.' 
+        content: `I'm sorry, there was an error: ${error.message}` 
       }]);
-    }, 1000);
-    
-    setMessage('');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -37,14 +52,27 @@ function App() {
             {chatHistory.length === 0 ? (
               <div className="welcome-message">
                 <h2>Welcome to RTS AI!</h2>
-                <p>This is a simple placeholder for our chatbot UI. Azure OpenAI integration will be added later.</p>
+                <p>Ask me anything! I'm powered by Azure OpenAI.</p>
               </div>
             ) : (
-              chatHistory.map((chat, index) => (
-                <div key={index} className={`message ${chat.role}`}>
-                  <div className="message-content">{chat.content}</div>
-                </div>
-              ))
+              <>
+                {chatHistory.map((chat, index) => (
+                  <div key={index} className={`message ${chat.role}`}>
+                    <div className="message-content">{chat.content}</div>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="message assistant loading">
+                    <div className="message-content">
+                      <div className="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
           

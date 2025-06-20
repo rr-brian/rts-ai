@@ -8,10 +8,10 @@ This application provides a clean, modern interface for interacting with an AI c
 
 ## Azure Configuration
 
-- Azure Region: `rr_innovate`
-- Web App Name: `rts-ai`
-- Subscription: `rr_innovation`
-- Subscription ID: `6ecd6944-a942-4acc-8ae7-ce35b5c6e94c`
+- Azure Region: `rg-innovation`
+- Web App Name: `rts-win-innovate`
+- Subscription: `rts-ai`
+- Subscription ID: `42ac2a48-c157-4b23-a6d1-41dd757723c9`
 
 ## Project Structure
 
