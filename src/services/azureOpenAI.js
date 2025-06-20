@@ -51,12 +51,9 @@ export const sendMessageToAzureOpenAI = async (messages) => {
   // No mock responses - using real Azure OpenAI credentials
 
   try {
-    console.log('Sending request to Azure OpenAI...');
-    
     // Check if we should use direct API call or server proxy
-    if (window.SERVER_CONFIG?.AZURE_OPENAI_API_KEY_SET && !config.apiKey) {
+    if (window.SERVER_CONFIG?.HAS_API_KEY && !config.apiKey) {
       // Use server as a proxy to keep API key secure
-      console.log('Using server proxy for Azure OpenAI API call');
       const response = await fetch('/api/azure-openai', {
         method: 'POST',
         headers: {
@@ -116,10 +113,9 @@ export const sendMessageToAzureOpenAI = async (messages) => {
       }
     }
   } catch (error) {
-    console.error('Error calling Azure OpenAI:', error);
     return {
       role: 'assistant',
-      content: `I'm sorry, there was an error communicating with the AI service: ${error.message}`
+      content: `I'm sorry, there was an error communicating with the AI service. Please try again later.`
     };
   }
 };

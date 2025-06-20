@@ -21,18 +21,32 @@ body {
   background-color: #0078d4;
   color: white;
   padding: 1rem;
-  text-align: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.app-logo {
+  height: 60px;
+  width: auto;
+  border-radius: 8px;
 }
 
 .App-header h1 {
   margin-bottom: 0.5rem;
   font-size: 2rem;
+  text-align: left;
 }
 
 .App-header p {
   font-size: 1rem;
   opacity: 0.9;
+  text-align: left;
 }
 
 .App-main {

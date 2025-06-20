@@ -42,8 +42,13 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>RTS AI Assistant</h1>
-        <p>Modern AI-powered chatbot interface</p>
+        <div className="logo-container">
+          <img src="/logo.png" alt="RTS AI Logo" className="app-logo" />
+          <div>
+            <h1>RTS AI Assistant</h1>
+            <p>Modern AI-powered chatbot interface</p>
+          </div>
+        </div>
       </header>
       
       <main className="App-main">

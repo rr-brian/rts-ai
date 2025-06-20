@@ -6,55 +6,20 @@ const fs = require('fs');
 try {
   const fs = require('fs');
   const path = require('path');
+  const dotenv = require('dotenv');
   
-  // Check if .env file exists
+  // Check if .env file exists and load it
   const envPath = path.resolve(__dirname, '.env');
-  console.log('Looking for .env file at:', envPath);
   
   if (fs.existsSync(envPath)) {
-    console.log('.env file exists');
-    
-    // Manually read and parse the .env file
-    try {
-      const envContent = fs.readFileSync(envPath, { encoding: 'utf8' });
-      
-      // Parse each line and set environment variables
-      envContent.split('\n').forEach(line => {
-        // Skip empty lines and comments
-        if (!line || line.startsWith('#')) return;
-        
-        // Split by first equals sign
-        const equalSignIndex = line.indexOf('=');
-        if (equalSignIndex > 0) {
-          const key = line.substring(0, equalSignIndex).trim();
-          const value = line.substring(equalSignIndex + 1).trim();
-          
-          // Remove quotes if present
-          const cleanValue = value.replace(/^['"](.*)['"]/g, '$1');
-          
-          // Set environment variable
-          process.env[key] = cleanValue;
-          console.log(`Set environment variable: ${key}`);
-        }
-      });
-      
-      // Print all environment variables with REACT_APP prefix for debugging
-      const reactAppVars = Object.keys(process.env)
-        .filter(key => key.startsWith('REACT_APP_'))
-        .reduce((obj, key) => {
-          obj[key] = process.env[key] ? 'SET' : 'NOT SET';
-          return obj;
-        }, {});
-      
-      console.log('Available REACT_APP environment variables:', reactAppVars);
-    } catch (readError) {
-      console.error('Error reading .env file:', readError);
-    }
+    // Load environment variables using dotenv
+    dotenv.config({ path: envPath });
+    console.log('Environment variables loaded from .env file');
   } else {
-    console.warn('.env file not found at:', envPath);
+    console.log('No .env file found, using environment variables from the system');
   }
 } catch (error) {
-  console.warn('Error during .env loading:', error);
+  console.warn('Error loading environment variables:', error.message);
 }
 
 const app = express();
@@ -71,18 +36,12 @@ app.use(express.static(path.join(__dirname, 'build')));
 
 // Create an endpoint to expose environment variables to the client
 app.get('/api/config', (req, res) => {
-  // Log available environment variables for debugging
-  console.log('Available environment variables:', {
-    ENDPOINT: process.env.REACT_APP_AZURE_OPENAI_ENDPOINT ? 'SET' : 'NOT SET',
-    API_KEY: process.env.REACT_APP_AZURE_OPENAI_API_KEY ? 'SET' : 'NOT SET',
-    DEPLOYMENT_NAME: process.env.REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME ? 'SET' : 'NOT SET'
-  });
-  
   res.json({
     REACT_APP_AZURE_OPENAI_ENDPOINT: process.env.REACT_APP_AZURE_OPENAI_ENDPOINT,
     REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME: process.env.REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME,
+    REACT_APP_AZURE_OPENAI_API_VERSION: process.env.REACT_APP_AZURE_OPENAI_API_VERSION,
     // Don't expose the API key directly, just indicate if it's set
-    AZURE_OPENAI_API_KEY_SET: !!process.env.REACT_APP_AZURE_OPENAI_API_KEY
+    HAS_API_KEY: !!process.env.REACT_APP_AZURE_OPENAI_API_KEY
   });
 });
 
@@ -132,7 +91,6 @@ app.post('/api/azure-openai', async (req, res) => {
     const data = await response.json();
     
     if (!response.ok) {
-      console.error('Azure OpenAI API error:', data);
       return res.status(response.status).json({ 
         error: `API request failed: ${data.error?.message || response.statusText}` 
       });
@@ -140,8 +98,7 @@ app.post('/api/azure-openai', async (req, res) => {
     
     res.json(data);
   } catch (error) {
-    console.error('Server proxy error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'An error occurred while processing your request' });
   }
 });
 
