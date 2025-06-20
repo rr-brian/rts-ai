@@ -29,17 +29,6 @@ const validateConfig = () => {
   
   if (missingConfig.length > 0) {
     console.error(`Missing Azure OpenAI configuration: ${missingConfig.join(', ')}`);
-    
-    // For development environment, provide fallback values for testing
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Using development fallback values for Azure OpenAI configuration');
-      // Use placeholder values for development
-      config.endpoint = config.endpoint || 'https://dev-placeholder-endpoint.openai.azure.com/';
-      config.apiKey = config.apiKey || 'dev-placeholder-key';
-      config.deploymentName = config.deploymentName || 'dev-placeholder-deployment';
-      return true; // Allow development to proceed with placeholders
-    }
-    
     return false;
   }
   return true;
@@ -59,15 +48,7 @@ export const sendMessageToAzureOpenAI = async (messages) => {
     };
   }
 
-  // In development mode, return mock responses for testing
-  if (process.env.NODE_ENV === 'development' && 
-      config.endpoint.includes('dev-placeholder')) {
-    console.log('Development mode: Returning mock response');
-    return {
-      role: 'assistant',
-      content: 'This is a development mock response. In production, this would be a response from Azure OpenAI.'
-    };
-  }
+  // No mock responses - using real Azure OpenAI credentials
 
   try {
     console.log('Sending request to Azure OpenAI...');
