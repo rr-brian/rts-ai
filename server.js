@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const app = express();
 
 // Basic error handling
@@ -15,15 +16,36 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+  // Check if build directory exists and contains index.html
+  const indexPath = path.join(__dirname, 'build', 'index.html');
+  const buildReady = fs.existsSync(indexPath);
+  
+  res.json({ 
+    status: 'ok',
+    buildReady: buildReady,
+    serverTime: new Date().toISOString()
+  });
 });
 
 // Serve static files from the build directory
 app.use(express.static(path.join(__dirname, 'build')));
 
-// All other routes serve index.html
+// Serve static files from the public directory as fallback
+app.use(express.static(path.join(__dirname, 'public')));
+
+// All other routes serve index.html or fallback to static page
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  const indexPath = path.join(__dirname, 'build', 'index.html');
+  const staticPath = path.join(__dirname, 'public', 'index-static.html');
+  
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else if (fs.existsSync(staticPath)) {
+    // If build isn't ready, serve the static loading page
+    res.sendFile(staticPath);
+  } else {
+    res.status(503).send('Application is starting up. Please try again in a few minutes.');
+  }
 });
 
 // Error handling middleware
@@ -34,5 +56,5 @@ app.use((err, req, res, next) => {
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`Server running on port ${port} at ${new Date().toISOString()}`);
 });

@@ -11,21 +11,20 @@ IF /I "%IN_PLACE_DEPLOYMENT%" NEQ "1" (
   IF !ERRORLEVEL! NEQ 0 goto error
 )
 
-:: 2. Install npm packages
+:: 2. Install npm packages with optimizations
 IF EXIST "%DEPLOYMENT_TARGET%\package.json" (
-  echo Installing npm packages...
+  echo Installing npm packages (optimized)...
   pushd "%DEPLOYMENT_TARGET%"
-  call :ExecuteCmd npm install --production
+  
+  :: Use npm ci instead of npm install for faster installs
+  call :ExecuteCmd npm ci --only=production --no-audit --prefer-offline
   IF !ERRORLEVEL! NEQ 0 goto error
-  popd
-)
-
-:: 3. Build React app
-IF EXIST "%DEPLOYMENT_TARGET%\package.json" (
-  echo Building React app...
-  pushd "%DEPLOYMENT_TARGET%"
-  call :ExecuteCmd npm run build
+  
+  :: Build with optimizations
+  echo Building React app with optimizations...
+  call :ExecuteCmd set "CI=false" && set "GENERATE_SOURCEMAP=false" && npm run build
   IF !ERRORLEVEL! NEQ 0 goto error
+  
   popd
 )
 
