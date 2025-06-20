@@ -22,7 +22,9 @@ IF EXIST "%DEPLOYMENT_TARGET%\package.json" (
   
   :: Build with optimizations
   echo Building React app with optimizations...
-  call :ExecuteCmd set "CI=false" && set "GENERATE_SOURCEMAP=false" && npm run build
+  set "CI=false"
+  set "GENERATE_SOURCEMAP=false"
+  call :ExecuteCmd npm run build
   IF !ERRORLEVEL! NEQ 0 goto error
   
   popd
