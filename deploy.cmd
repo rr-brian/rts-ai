@@ -25,10 +25,10 @@ echo Copying package.json to deployment target...
 copy "%DEPLOYMENT_SOURCE%\package.json" "%DEPLOYMENT_TARGET%\package.json"
 IF !ERRORLEVEL! NEQ 0 goto error
 
-:: 5. Install only production dependencies
-echo Installing production dependencies...
+:: 5. Install only express and path dependencies
+echo Installing minimal server dependencies...
 pushd "%DEPLOYMENT_TARGET%"
-call npm install --only=production --no-optional
+call npm install express path --no-optional
 IF !ERRORLEVEL! NEQ 0 goto error
 popd
 
