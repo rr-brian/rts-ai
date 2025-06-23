@@ -45,8 +45,8 @@ function App() {
         <div className="logo-container">
           <img src="/logo.png" alt="RTS AI Logo" className="app-logo" />
           <div>
-            <h1>RTS AI Assistant</h1>
-            <p>Modern AI-powered chatbot interface</p>
+            <h1>RTS AI Toolbox</h1>
+            <p>Modern AI-powered enterprise solutions</p>
           </div>
         </div>
       </header>
@@ -56,7 +56,7 @@ function App() {
           <div className="chat-messages">
             {chatHistory.length === 0 ? (
               <div className="welcome-message">
-                <h2>Welcome to RTS AI!</h2>
+                <h2>Welcome to RTS AI Toolbox!</h2>
                 <p>Ask me anything! I'm powered by Azure OpenAI.</p>
               </div>
             ) : (
@@ -95,7 +95,7 @@ function App() {
       </main>
       
       <footer className="App-footer">
-        <p>© {new Date().getFullYear()} RTS AI - Connected to Azure OpenAI</p>
+        <p>© {new Date().getFullYear()} RTS AI Toolbox - Connected to Azure OpenAI</p>
       </footer>
     </div>
   );
