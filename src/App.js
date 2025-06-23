@@ -31,20 +31,22 @@ function App() {
       <Router>
         <div className="App">
           <header className="App-header">
-            <div className="header-content">
-              <img src="/logo.png" alt="RTS AI Logo" className="app-logo" />
-              <div>
+            <div className="header-container">
+              <div className="logo-section">
+                <img src="/logo.png" alt="RTS AI Logo" className="app-logo" />
+              </div>
+              <div className="title-section">
                 <h1>RTS AI Toolbox</h1>
                 <p>AI powered enterprise solutions</p>
               </div>
-            </div>
-            <div className="auth-buttons">
-              <AuthenticatedTemplate>
-                <button className="logout-button" onClick={handleLogout}>Sign Out</button>
-              </AuthenticatedTemplate>
-              <UnauthenticatedTemplate>
-                <button className="login-button" onClick={handleLogin}>Sign In</button>
-              </UnauthenticatedTemplate>
+              <div className="auth-buttons">
+                <AuthenticatedTemplate>
+                  <button className="logout-button" onClick={handleLogout}>Sign Out</button>
+                </AuthenticatedTemplate>
+                <UnauthenticatedTemplate>
+                  <button className="login-button" onClick={handleLogin}>Sign In</button>
+                </UnauthenticatedTemplate>
+              </div>
             </div>
           </header>
           

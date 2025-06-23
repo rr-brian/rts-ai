@@ -24,15 +24,27 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.logo-container {
+.header-container {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  gap: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.logo-section {
+  flex: 0 0 auto;
+  margin-right: 20px;
+}
+
+.title-section {
+  flex: 1 1 auto;
+  text-align: center;
 }
 
 .app-logo {
-  height: 60px;
+  height: 120px;
   width: auto;
   border-radius: 8px;
 }
@@ -40,13 +52,13 @@ body {
 .App-header h1 {
   margin-bottom: 0.5rem;
   font-size: 2rem;
-  text-align: left;
+  text-align: center;
 }
 
 .App-header p {
   font-size: 1rem;
   opacity: 0.9;
-  text-align: left;
+  text-align: center;
 }
 
 .App-nav {
@@ -331,8 +343,8 @@ body {
 .auth-buttons {
   display: flex;
   align-items: center;
-  margin-left: auto;
-  padding-right: 20px;
+  flex: 0 0 auto;
+  margin-left: 20px;
 }
 
 .login-button, .logout-button {
@@ -528,6 +540,15 @@ body {
   
   .message {
     max-width: 90%;
+  }
+  
+  .header-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .logo-section, .title-section, .auth-buttons {
+    margin: 5px 0;
   }
   
   .App-header h1 {
