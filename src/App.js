@@ -68,7 +68,7 @@ function App() {
             {chatHistory.length === 0 ? (
               <div className="welcome-message">
                 <h2>Welcome to RTS AI Toolbox!</h2>
-                <p>Ask me anything! I'm powered by Azure OpenAI.</p>
+                <p>Ask me anything! I am the RTS general model powered by Azure OpenAI.</p>
               </div>
             ) : (
               <>
@@ -106,7 +106,7 @@ function App() {
       </main>
       
       <footer className="App-footer">
-        <p>© {new Date().getFullYear()} RTS AI Toolbox - Connected to Azure OpenAI</p>
+        <p>© {new Date().getFullYear()} RTS AI Toolbox - Connected to Azure OpenAI - GPT4.5</p>
       </footer>
     </div>
   );
