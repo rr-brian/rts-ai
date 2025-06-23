@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import { sendMessageToAzureOpenAI } from './services/azureOpenAI';
+import ReactMarkdown from 'react-markdown';
 
 function App() {
   const [message, setMessage] = useState('');
@@ -74,7 +75,13 @@ function App() {
               <>
                 {chatHistory.map((chat, index) => (
                   <div key={index} className={`message ${chat.role}`}>
-                    <div className="message-content">{chat.content}</div>
+                    <div className="message-content">
+                      {chat.role === 'assistant' ? (
+                        <ReactMarkdown>{chat.content}</ReactMarkdown>
+                      ) : (
+                        chat.content
+                      )}
+                    </div>
                   </div>
                 ))}
                 {isLoading && (
