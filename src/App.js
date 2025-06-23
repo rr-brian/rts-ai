@@ -46,7 +46,7 @@ function App() {
           <img src="/logo.png" alt="RTS AI Logo" className="app-logo" />
           <div>
             <h1>RTS AI Toolbox</h1>
-            <p>Modern AI-powered enterprise solutions</p>
+            <p>AI powered enterprise solutions</p>
           </div>
         </div>
       </header>
@@ -58,6 +58,7 @@ function App() {
           <li><a href="#" className="nav-link">Accounting</a></li>
           <li><a href="#" className="nav-link">HR</a></li>
           <li><a href="#" className="nav-link">Omaha</a></li>
+          <li><a href="#" className="nav-link">DSC</a></li>
         </ul>
       </nav>
       
