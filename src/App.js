@@ -1,121 +1,76 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { MsalProvider, AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from '@azure/msal-react';
+import { PublicClientApplication } from '@azure/msal-browser';
 import './App.css';
-import { sendMessageToAzureOpenAI } from './services/azureOpenAI';
-import ReactMarkdown from 'react-markdown';
+
+// Import pages
+import Home from './pages/Home';
+import Legal from './pages/Legal';
+import AccessDenied from './pages/AccessDenied';
+
+// Import auth configuration
+import { msalConfig } from './auth/authConfig';
+
+// Initialize MSAL instance
+const msalInstance = new PublicClientApplication(msalConfig);
 
 function App() {
-  const [message, setMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!message.trim() || isLoading) return;
-    
-    // Add user message to chat history
-    const userMessage = { role: 'user', content: message };
-    setChatHistory([...chatHistory, userMessage]);
-    setMessage('');
-    setIsLoading(true);
-    
-    try {
-      // Prepare the messages array for the API call
-      // Include conversation history for context
-      const messages = [...chatHistory, userMessage];
-      
-      // Call Azure OpenAI service
-      const aiResponse = await sendMessageToAzureOpenAI(messages);
-      
-      // Add AI response to chat history
-      setChatHistory(prev => [...prev, aiResponse]);
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      // Add error message to chat history
-      setChatHistory(prev => [...prev, { 
-        role: 'assistant', 
-        content: `I'm sorry, there was an error: ${error.message}` 
-      }]);
-    } finally {
-      setIsLoading(false);
-    }
+  // Handle login
+  const handleLogin = () => {
+    msalInstance.loginRedirect();
+  };
+  
+  // Handle logout
+  const handleLogout = () => {
+    msalInstance.logoutRedirect();
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <div className="logo-container">
-          <img src="/logo.png" alt="RTS AI Logo" className="app-logo" />
-          <div>
-            <h1>RTS AI Toolbox</h1>
-            <p>AI powered enterprise solutions</p>
-          </div>
-        </div>
-      </header>
-      
-      <nav className="App-nav">
-        <ul className="nav-links">
-          <li><a href="#" className="nav-link">REA</a></li>
-          <li><a href="#" className="nav-link">Legal</a></li>
-          <li><a href="#" className="nav-link">Accounting</a></li>
-          <li><a href="#" className="nav-link">HR</a></li>
-          <li><a href="#" className="nav-link">Omaha</a></li>
-          <li><a href="#" className="nav-link">DSC</a></li>
-        </ul>
-      </nav>
-      
-      <main className="App-main">
-        <div className="chat-container">
-          <div className="chat-messages">
-            {chatHistory.length === 0 ? (
-              <div className="welcome-message">
-                <h2>Welcome to RTS AI Toolbox!</h2>
-                <p>Ask me anything! I am the RTS general model powered by Azure OpenAI.</p>
+    <MsalProvider instance={msalInstance}>
+      <Router>
+        <div className="App">
+          <header className="App-header">
+            <div className="header-content">
+              <img src="/logo.png" alt="RTS AI Logo" className="app-logo" />
+              <div>
+                <h1>RTS AI Toolbox</h1>
+                <p>AI powered enterprise solutions</p>
               </div>
-            ) : (
-              <>
-                {chatHistory.map((chat, index) => (
-                  <div key={index} className={`message ${chat.role}`}>
-                    <div className="message-content">
-                      {chat.role === 'assistant' ? (
-                        <ReactMarkdown>{chat.content}</ReactMarkdown>
-                      ) : (
-                        chat.content
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {isLoading && (
-                  <div className="message assistant loading">
-                    <div className="message-content">
-                      <div className="typing-indicator">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+            </div>
+            <div className="auth-buttons">
+              <AuthenticatedTemplate>
+                <button className="logout-button" onClick={handleLogout}>Sign Out</button>
+              </AuthenticatedTemplate>
+              <UnauthenticatedTemplate>
+                <button className="login-button" onClick={handleLogin}>Sign In</button>
+              </UnauthenticatedTemplate>
+            </div>
+          </header>
           
-          <form className="chat-input-form" onSubmit={handleSubmit}>
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your message here..."
-              className="chat-input"
-            />
-            <button type="submit" className="send-button">Send</button>
-          </form>
+          <nav className="App-nav">
+            <ul className="nav-links">
+              <li><Link to="/" className="nav-link">REA</Link></li>
+              <li><Link to="/legal" className="nav-link">Legal</Link></li>
+              <li><Link to="/" className="nav-link">Accounting</Link></li>
+              <li><Link to="/" className="nav-link">HR</Link></li>
+              <li><Link to="/" className="nav-link">Omaha</Link></li>
+              <li><Link to="/" className="nav-link">DSC</Link></li>
+            </ul>
+          </nav>
+          
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/legal" element={<Legal />} />
+            <Route path="/access-denied" element={<AccessDenied />} />
+          </Routes>
+          
+          <footer className="App-footer">
+            <p>© {new Date().getFullYear()} RTS AI Toolbox - Connected to Azure OpenAI - GPT4.5</p>
+          </footer>
         </div>
-      </main>
-      
-      <footer className="App-footer">
-        <p>© {new Date().getFullYear()} RTS AI Toolbox - Connected to Azure OpenAI - GPT4.5</p>
-      </footer>
-    </div>
+      </Router>
+    </MsalProvider>
   );
 }
 
