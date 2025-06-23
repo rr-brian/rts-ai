@@ -51,6 +51,16 @@ function App() {
         </div>
       </header>
       
+      <nav className="App-nav">
+        <ul className="nav-links">
+          <li><a href="#" className="nav-link">REA</a></li>
+          <li><a href="#" className="nav-link">Legal</a></li>
+          <li><a href="#" className="nav-link">Accounting</a></li>
+          <li><a href="#" className="nav-link">HR</a></li>
+          <li><a href="#" className="nav-link">Omaha</a></li>
+        </ul>
+      </nav>
+      
       <main className="App-main">
         <div className="chat-container">
           <div className="chat-messages">
