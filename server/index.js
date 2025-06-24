@@ -26,6 +26,19 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('Headers:', JSON.stringify(req.headers));
+  next();
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  console.log('Health check endpoint called');
+  res.status(200).json({ status: 'ok', env: process.env.NODE_ENV, timestamp: new Date().toISOString() });
+});
+
 // API routes
 app.use('/api/conversations', conversationsRouter);
 
