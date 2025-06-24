@@ -75,6 +75,18 @@ echo Copying api-test.html to deployment target...
 call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\api-test.html" "%DEPLOYMENT_TARGET%\api-test.html" /Y
 IF !ERRORLEVEL! NEQ 0 goto error
 
+echo Copying openai-test.html to deployment target...
+IF EXIST "%DEPLOYMENT_SOURCE%\openai-test.html" (
+  call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\openai-test.html" "%DEPLOYMENT_TARGET%\openai-test.html" /Y
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
+
+echo Copying local-test.html to deployment target...
+IF EXIST "%DEPLOYMENT_SOURCE%\local-test.html" (
+  call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\local-test.html" "%DEPLOYMENT_TARGET%\local-test.html" /Y
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
+
 :: 5. KuduSync - Copy build files to deployment target
 echo Syncing build files to deployment target...
 call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%DEPLOYMENT_SOURCE%\build" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.hg;.deployment;deploy.cmd;node_modules"
@@ -117,7 +129,8 @@ echo     "path": "^0.12.7", >> package.json
 echo     "cors": "^2.8.5", >> package.json
 echo     "dotenv": "^16.3.1", >> package.json
 echo     "mssql": "^9.1.1", >> package.json
-echo     "uuid": "^9.0.0" >> package.json
+echo     "uuid": "^9.0.0", >> package.json
+echo     "node-fetch": "^2.6.7" >> package.json
 echo   }, >> package.json
 echo   "engines": { >> package.json
 echo     "node": "^20.0.0" >> package.json
