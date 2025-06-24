@@ -8,7 +8,7 @@ export const msalConfig = {
     clientId: process.env.REACT_APP_AZURE_AD_CLIENT_ID,
     authority: process.env.REACT_APP_AZURE_AD_AUTHORITY,
     redirectUri: process.env.REACT_APP_AZURE_AD_REDIRECT_URI,
-    postLogoutRedirectUri: window.location.origin,
+    postLogoutRedirectUri: process.env.REACT_APP_AZURE_AD_REDIRECT_URI,
   },
   cache: {
     cacheLocation: "sessionStorage", // or "localStorage"
