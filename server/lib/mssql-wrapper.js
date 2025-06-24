@@ -5,40 +5,38 @@
  * when it's not available in the deployment environment.
  */
 
-let sql;
-
-try {
-  // Try to load the real mssql module
-  sql = require('mssql');
-  console.log('Successfully loaded mssql module');
-} catch (error) {
-  console.warn('Failed to load mssql module, using mock implementation:', error.message);
-  
-  // Create a mock SQL client
-  sql = {
-    connect: () => {
-      console.log('Mock SQL: connect called');
+// Create a complete mock SQL implementation that doesn't rely on any external dependencies
+const createMockSql = () => {
+  console.log('Creating complete mock SQL implementation');
+  return {
+    connect: (config) => {
+      console.log('Mock SQL connect called with config:', JSON.stringify({
+        server: config.server,
+        database: config.database,
+        user: config.user,
+        // Don't log password
+      }));
       return Promise.resolve();
     },
     close: () => {
-      console.log('Mock SQL: close called');
+      console.log('Mock SQL close called');
       return Promise.resolve();
     },
     Request: class MockRequest {
       constructor() {
         this.inputs = {};
-        console.log('Mock SQL: Request created');
+        console.log('Mock SQL Request created');
       }
       
       input(name, type, value) {
-        console.log(`Mock SQL: input called with name=${name}, type=${type}, value=${value}`);
+        console.log(`Mock SQL input called with name=${name}, value=${value}`);
         this.inputs[name] = value;
         return this;
       }
       
       query(sql) {
-        console.log(`Mock SQL: query called with sql=${sql}`);
-        console.log('Mock SQL: inputs =', JSON.stringify(this.inputs));
+        console.log(`Mock SQL query called with sql=${sql}`);
+        console.log('Mock SQL inputs =', JSON.stringify(this.inputs));
         
         // Return empty recordset by default
         const result = { recordset: [] };
@@ -97,6 +95,16 @@ try {
     DateTime2: Date,
     Int: Number
   };
+};
+
+// Try to load the real mssql module, fall back to mock if any issues
+let sql;
+try {
+  sql = require('mssql');
+  console.log('Successfully loaded mssql module');
+} catch (error) {
+  console.warn('Failed to load mssql module, using mock implementation:', error.message);
+  sql = createMockSql();
 }
 
 module.exports = sql;
