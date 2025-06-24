@@ -11,7 +11,7 @@ app.use((req, res, next) => {
 });
 
 // Simple health check endpoint
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -20,7 +20,7 @@ app.get('/health', (req, res) => {
 });
 
 // Debug routes endpoint
-app.get('/debug-routes', (req, res) => {
+app.get('/api/debug-routes', (req, res) => {
   res.json({
     timestamp: new Date().toISOString(),
     request: {
@@ -37,7 +37,7 @@ app.get('/debug-routes', (req, res) => {
 });
 
 // Test SQL endpoint (mock version)
-app.get('/test-sql', (req, res) => {
+app.get('/api/test-sql', (req, res) => {
   res.json({
     status: 'success',
     message: 'This is a mock SQL response from the dedicated API handler',
@@ -46,7 +46,7 @@ app.get('/test-sql', (req, res) => {
 });
 
 // Catch-all for unhandled API routes
-app.use('*', (req, res) => {
+app.use('/api/*', (req, res) => {
   res.status(404).json({
     error: 'API endpoint not found',
     path: req.path,
