@@ -51,16 +51,46 @@ echo Copying web.config to deployment target...
 call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\web.config" "%DEPLOYMENT_TARGET%\web.config"
 IF !ERRORLEVEL! NEQ 0 goto error
 
-:: 4. Copy server.js and server directory to deployment target
-echo Copying server.js and server directory to deployment target...
-call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\server.js" "%DEPLOYMENT_TARGET%\server.js"
-IF !ERRORLEVEL! NEQ 0 goto error
+:: 4. Copy server.js, server directory, and node_modules
+echo Copying server.js, server directory, and node_modules...
 
-echo Copying server directory...
-IF EXIST "%DEPLOYMENT_SOURCE%\server" (
-  call :ExecuteCmd mkdir "%DEPLOYMENT_TARGET%\server"
-  call :ExecuteCmd xcopy /Y /E "%DEPLOYMENT_SOURCE%\server\*" "%DEPLOYMENT_TARGET%\server\"
+IF EXIST "%DEPLOYMENT_TARGET%\server.js" (
+  echo server.js already exists, skipping copy
+) ELSE (
+  echo Copying server.js
+  call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\server.js" "%DEPLOYMENT_TARGET%\" /Y
   IF !ERRORLEVEL! NEQ 0 goto error
+)
+
+IF EXIST "%DEPLOYMENT_TARGET%\server" (
+  echo server directory already exists, skipping copy
+) ELSE (
+  echo Creating server directory
+  call :ExecuteCmd mkdir "%DEPLOYMENT_TARGET%\server"
+  IF !ERRORLEVEL! NEQ 0 goto error
+  
+  echo Copying server directory contents
+  call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\server" "%DEPLOYMENT_TARGET%\server" /E /Y
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
+
+echo Copying node_modules directory
+IF EXIST "%DEPLOYMENT_SOURCE%\node_modules" (
+  IF NOT EXIST "%DEPLOYMENT_TARGET%\node_modules" (
+    echo Creating node_modules directory
+    call :ExecuteCmd mkdir "%DEPLOYMENT_TARGET%\node_modules"
+    IF !ERRORLEVEL! NEQ 0 goto error
+  )
+  
+  echo Copying mssql module
+  IF EXIST "%DEPLOYMENT_SOURCE%\node_modules\mssql" (
+    IF NOT EXIST "%DEPLOYMENT_TARGET%\node_modules\mssql" (
+      call :ExecuteCmd mkdir "%DEPLOYMENT_TARGET%\node_modules\mssql"
+      IF !ERRORLEVEL! NEQ 0 goto error
+    )
+    call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\node_modules\mssql" "%DEPLOYMENT_TARGET%\node_modules\mssql" /E /Y
+    IF !ERRORLEVEL! NEQ 0 goto error
+  )
 )
 
 :: 5. Create a package.json file in the deployment target

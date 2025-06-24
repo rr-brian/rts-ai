@@ -1,5 +1,8 @@
 const express = require('express');
-let uuidv4, sql, dotenv;
+let uuidv4, dotenv;
+
+// Use our custom mssql wrapper that provides fallbacks
+const sql = require('../lib/mssql-wrapper');
 
 // Try to load optional dependencies
 try {
@@ -14,26 +17,6 @@ try {
       const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
       return v.toString(16);
     });
-  };
-}
-
-try {
-  sql = require('mssql');
-  console.log('MSSQL module loaded successfully');
-} catch (error) {
-  console.warn('MSSQL module not available:', error.message);
-  // Create a mock SQL client
-  sql = {
-    connect: () => Promise.resolve(),
-    close: () => Promise.resolve(),
-    Request: class MockRequest {
-      input() { return this; }
-      query() { return Promise.resolve({ recordset: [] }); }
-    },
-    UniqueIdentifier: String,
-    NVarChar: String,
-    DateTime2: Date,
-    Int: Number
   };
 }
 
