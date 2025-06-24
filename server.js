@@ -182,29 +182,68 @@ app.post('/api/azure-openai', async (req, res) => {
 
 // All other routes serve the React app
 app.get('*', (req, res) => {
-  // Read the index.html file
-  let indexHtml = fs.readFileSync(path.join(__dirname, 'build', 'index.html'), 'utf8');
-  
-  // Inject a script to fetch config from /api/config
-  const configScript = `
-    <script>
-      // Fetch configuration from server
-      fetch('/api/config')
-        .then(response => response.json())
-        .then(config => {
-          // Expose config to window object
-          window.SERVER_CONFIG = config;
-          console.log('Server config loaded:', config);
-        })
-        .catch(error => console.error('Failed to load server config:', error));
-    </script>
-  `;
-  
-  // Insert the script right before the closing </head> tag
-  indexHtml = indexHtml.replace('</head>', `${configScript}</head>`);
-  
-  // Send the modified HTML
-  res.send(indexHtml);
+  try {
+    // Try to find an appropriate HTML file to serve
+    let indexHtmlPath = path.join(__dirname, 'build', 'index.html');
+    let indexHtml;
+    
+    // First try index.html
+    if (fs.existsSync(indexHtmlPath)) {
+      console.log('Using index.html for SPA fallback');
+      indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
+    } else {
+      // Fall back to index-static.html if available
+      const staticIndexPath = path.join(__dirname, 'build', 'index-static.html');
+      if (fs.existsSync(staticIndexPath)) {
+        console.log('Using index-static.html for SPA fallback');
+        indexHtml = fs.readFileSync(staticIndexPath, 'utf8');
+      } else {
+        // Last resort: generate a simple HTML page
+        console.warn('No index.html or index-static.html found, using fallback HTML');
+        indexHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>RTS AI</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+          </head>
+          <body>
+            <div id="root">
+              <h1>Welcome to RTS AI!</h1>
+              <p>This is a simple placeholder for our chatbot UI.</p>
+              <p>Azure OpenAI integration will be added later.</p>
+            </div>
+          </body>
+          </html>
+        `;
+      }
+    }
+    
+    // Inject a script to fetch config from /api/config
+    const configScript = `
+      <script>
+        // Fetch configuration from server
+        fetch('/api/config')
+          .then(response => response.json())
+          .then(config => {
+            // Expose config to window object
+            window.SERVER_CONFIG = config;
+            console.log('Server config loaded:', config);
+          })
+          .catch(error => console.error('Failed to load server config:', error));
+      </script>
+    `;
+    
+    // Insert the script right before the closing </head> tag
+    indexHtml = indexHtml.replace('</head>', `${configScript}</head>`);
+    
+    // Send the modified HTML
+    res.send(indexHtml);
+  } catch (error) {
+    console.error('Error serving SPA fallback:', error);
+    res.status(500).send('Server Error: Could not serve application');
+  }
 });
 
 // Start the server
