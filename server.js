@@ -1,6 +1,8 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const cors = require('cors');
+const conversationsRouter = require('./server/api/conversations');
 
 // Load environment variables from .env file
 try {
@@ -25,9 +27,20 @@ try {
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL || 'https://www.rrrealty.ai'] 
+    : ['http://localhost:3000', 'http://localhost:3001'],
+  credentials: true
+}));
+
 // Simple request logging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('Headers:', JSON.stringify(req.headers));
   next();
 });
 
@@ -47,8 +60,11 @@ app.get('/api/config', (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+  res.json({ status: 'ok', env: process.env.NODE_ENV, timestamp: new Date().toISOString() });
 });
+
+// API routes
+app.use('/api/conversations', conversationsRouter);
 
 // Azure OpenAI proxy endpoint
 app.post('/api/azure-openai', async (req, res) => {
