@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
 import { InteractionRequiredAuthError } from '@azure/msal-browser';
+import BrokerageChat from '../components/BrokerageChat';
 import '../App.css';
 
 function Legal() {
@@ -9,6 +10,7 @@ function Legal() {
   const [userRoles, setUserRoles] = useState([]);
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -126,10 +128,18 @@ function Legal() {
             <div className="resource-card">
               <h3>Brokerage AI Assistant</h3>
               <p>AI-powered brokerage research and document analysis</p>
-              <button className="resource-button">Launch Assistant</button>
+              <button className="resource-button" onClick={() => setShowChat(prev => !prev)}>
+                {showChat ? 'Hide Assistant' : 'Launch Assistant'}
+              </button>
             </div>
           </div>
         </div>
+        
+        {showChat && (
+          <div className="brokerage-chat-section">
+            <BrokerageChat />
+          </div>
+        )}
       </div>
     </div>
   );
