@@ -102,7 +102,7 @@ app.use('/api', (req, res, next) => {
 app.use(express.static(path.join(__dirname, 'build')));
 
 // Create an endpoint to expose environment variables to the client
-app.get('/api/config', (req, res) => {
+app.get('/api/react-config', (req, res) => {
   res.json({
     REACT_APP_AZURE_OPENAI_ENDPOINT: process.env.REACT_APP_AZURE_OPENAI_ENDPOINT,
     REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME: process.env.REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME,
@@ -269,8 +269,13 @@ app.post('/api/azure-openai', async (req, res) => {
   }
 });
 
-// All other routes serve the React app
-app.get('*', (req, res) => {
+// All other routes serve the React app - but not API routes
+app.get('*', (req, res, next) => {
+  // Skip API routes - they should be handled by their own handlers
+  if (req.url.startsWith('/api/')) {
+    console.log('API request detected in fallback handler, skipping SPA fallback:', req.url);
+    return next();
+  }
   try {
     // Try to find an appropriate HTML file to serve
     let indexHtmlPath = path.join(__dirname, 'build', 'index.html');
@@ -309,15 +314,16 @@ app.get('*', (req, res) => {
       }
     }
     
-    // Inject a script to fetch config from /api/config
+    // Inject a script to fetch config from /api/react-config
     const configScript = `
       <script>
         // Fetch configuration from server
-        fetch('/api/config')
+        fetch('/api/react-config')
           .then(response => response.json())
           .then(config => {
             // Expose config to window object
             window.SERVER_CONFIG = config;
+            window.REACT_APP_CONFIG = config; // Also set REACT_APP_CONFIG for compatibility
             console.log('Server config loaded:', config);
           })
           .catch(error => console.error('Failed to load server config:', error));
@@ -333,6 +339,17 @@ app.get('*', (req, res) => {
     console.error('Error serving SPA fallback:', error);
     res.status(500).send('Server Error: Could not serve application');
   }
+});
+
+// Add a catch-all handler for API routes that weren't matched
+app.use('/api/*', (req, res) => {
+  console.log(`API endpoint not found: ${req.method} ${req.url}`);
+  res.status(404).json({
+    error: 'API endpoint not found',
+    path: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Start the server
