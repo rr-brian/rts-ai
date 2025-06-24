@@ -86,9 +86,22 @@
 
     <script>
         function testEndpoint(endpoint) {
-            const endpointId = endpoint.replace(/\//g, '-').substring(1);
+            // Convert endpoint path to a valid ID
+            let endpointId = endpoint.replace(/\//g, '-');
+            if (endpointId.startsWith('-')) {
+                endpointId = endpointId.substring(1);
+            }
+            
+            // Get the status and result elements
             const statusElement = document.getElementById(`${endpointId}-status`);
             const resultElement = document.getElementById(`${endpointId}-result`);
+            
+            // Check if elements exist
+            if (!statusElement || !resultElement) {
+                console.error(`Elements not found for endpoint: ${endpoint}, ID: ${endpointId}`);
+                alert(`Error: Could not find elements for ${endpoint}. Check console for details.`);
+                return;
+            }
             
             statusElement.textContent = 'Testing...';
             statusElement.className = 'status';
