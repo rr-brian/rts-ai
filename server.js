@@ -75,10 +75,11 @@ app.use(cors({
   credentials: true
 }));
 
-// Log all requests
+// Log all requests with detailed information
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}` + 
-    `Headers: ${JSON.stringify(req.headers)}`);
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log(`Request headers: ${JSON.stringify(req.headers)}`);
+  console.log(`Request path: ${req.path}, originalUrl: ${req.originalUrl}`);
   next();
 });
 
@@ -142,6 +143,12 @@ app.get('/api/config', (req, res) => {
 
 // API routes
 app.use('/api/conversations', conversationsRouter);
+
+// Very simple test endpoint that should always work
+app.get('/test', (req, res) => {
+  console.log('Simple test endpoint called');
+  res.send('Test endpoint is working');
+});
 
 // Diagnostic endpoint to help debug routing issues
 app.get('/api/debug-routes', (req, res) => {
