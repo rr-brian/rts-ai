@@ -24,7 +24,11 @@ function Admin() {
     setError(null);
     
     try {
-      const response = await fetch(`/api/conversations/user/${userId}`);
+      // Use the API URL from environment variables or fallback to a default
+      const apiBaseUrl = process.env.REACT_APP_API_URL || window.location.origin;
+      console.log('Using API base URL for user conversations:', apiBaseUrl);
+      
+      const response = await fetch(`${apiBaseUrl}/api/conversations/user/${userId}`);
       
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
@@ -45,7 +49,11 @@ function Admin() {
     setError(null);
     
     try {
-      const response = await fetch(`/api/conversations/${conversationId}`);
+      // Use the API URL from environment variables or fallback to a default
+      const apiBaseUrl = process.env.REACT_APP_API_URL || window.location.origin;
+      console.log('Using API base URL for conversation details:', apiBaseUrl);
+      
+      const response = await fetch(`${apiBaseUrl}/api/conversations/${conversationId}`);
       
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);

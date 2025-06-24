@@ -25,7 +25,11 @@ function Home() {
       
       setTotalTokens(estimatedTokens);
       
-      const response = await fetch('/api/conversations/update', {
+      // Use the API URL from environment variables or fallback to a default
+      const apiBaseUrl = process.env.REACT_APP_API_URL || window.location.origin;
+      console.log('Using API base URL:', apiBaseUrl);
+      
+      const response = await fetch(`${apiBaseUrl}/api/conversations/update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
