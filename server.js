@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const fetch = require('node-fetch');
 
 // Try to load optional modules
 let cors;
@@ -115,7 +116,14 @@ app.get('/api/react-config', (req, res) => {
     REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME: process.env.REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME,
     REACT_APP_AZURE_OPENAI_API_VERSION: process.env.REACT_APP_AZURE_OPENAI_API_VERSION,
     // Don't expose the API key directly, just indicate if it's set
-    HAS_API_KEY: !!process.env.REACT_APP_AZURE_OPENAI_API_KEY
+    HAS_API_KEY: !!process.env.REACT_APP_AZURE_OPENAI_API_KEY,
+    // Brokerage OpenAI config
+    REACT_APP_BROKERAGE_OPENAI_ENDPOINT: process.env.REACT_APP_BROKERAGE_OPENAI_ENDPOINT,
+    REACT_APP_BROKERAGE_OPENAI_DEPLOYMENT_NAME: process.env.REACT_APP_BROKERAGE_OPENAI_DEPLOYMENT_NAME,
+    REACT_APP_BROKERAGE_OPENAI_API_VERSION: process.env.REACT_APP_BROKERAGE_OPENAI_API_VERSION,
+    HAS_BROKERAGE_API_KEY: !!process.env.REACT_APP_BROKERAGE_OPENAI_API_KEY,
+    // API URL
+    REACT_APP_API_URL: process.env.REACT_APP_API_URL || ''
   });
 });
 
@@ -156,6 +164,18 @@ app.get('/test', (req, res) => {
   res.send('Test endpoint is working');
 });
 
+// Serve local-test.html for API testing
+app.get('/local-test', (req, res) => {
+  console.log('Local test page requested');
+  res.sendFile(path.join(__dirname, 'local-test.html'));
+});
+
+// Serve openai-test.html for testing the Azure OpenAI API
+app.get('/openai-test', (req, res) => {
+  console.log('OpenAI test page requested');
+  res.sendFile(path.join(__dirname, 'openai-test.html'));
+});
+
 // Diagnostic endpoint to help debug routing issues
 app.get('/api/debug-routes', (req, res) => {
   console.log('Debug routes endpoint called');
@@ -182,6 +202,70 @@ app.get('/api/debug-routes', (req, res) => {
       '/api/debug-routes'
     ]
   });
+});
+
+// Azure OpenAI proxy endpoint
+app.post('/api/azure-openai', async (req, res) => {
+  console.log('Azure OpenAI proxy endpoint called');
+  try {
+    const { messages, max_tokens = 800, temperature = 0.7 } = req.body;
+    
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'Invalid request: messages array is required' });
+    }
+    
+    // Get Azure OpenAI configuration from environment variables
+    const azureOpenAIEndpoint = process.env.REACT_APP_AZURE_OPENAI_ENDPOINT;
+    const azureOpenAIKey = process.env.REACT_APP_AZURE_OPENAI_API_KEY;
+    const deploymentName = process.env.REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME;
+    const apiVersion = process.env.REACT_APP_AZURE_OPENAI_API_VERSION || '2023-05-15';
+    
+    if (!azureOpenAIEndpoint || !azureOpenAIKey || !deploymentName) {
+      console.error('Azure OpenAI configuration missing');
+      return res.status(500).json({ error: 'Azure OpenAI configuration is incomplete' });
+    }
+    
+    // Construct the API URL
+    const apiUrl = `${azureOpenAIEndpoint}openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`;
+    
+    console.log(`Calling Azure OpenAI API at: ${apiUrl}`);
+    
+    // Make the API request
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': azureOpenAIKey
+      },
+      body: JSON.stringify({
+        messages,
+        max_tokens,
+        temperature,
+        top_p: 0.95,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+        stop: null
+      })
+    });
+    
+    // Check if the response is successful
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Azure OpenAI API error:', errorText);
+      return res.status(response.status).json({ 
+        error: `Azure OpenAI API request failed: ${response.statusText}`,
+        details: errorText
+      });
+    }
+    
+    // Parse and return the response
+    const data = await response.json();
+    console.log('Azure OpenAI response received successfully');
+    res.json(data);
+  } catch (error) {
+    console.error('Error in Azure OpenAI proxy:', error);
+    res.status(500).json({ error: 'Failed to process Azure OpenAI request', message: error.message });
+  }
 });
 
 // Test SQL endpoint
