@@ -65,9 +65,17 @@ echo Copying server directory contents
 call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\server" "%DEPLOYMENT_TARGET%\server" /E /Y
 IF !ERRORLEVEL! NEQ 0 goto error
 
-:: 4. Copy web.config file (critical for routing)
+:: 4. Copy web.config file and other critical files (api-routes.js, api-test.html)
 echo Copying web.config to deployment target...
 call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\web.config" "%DEPLOYMENT_TARGET%\web.config" /Y
+IF !ERRORLEVEL! NEQ 0 goto error
+
+echo Copying api-routes.js to deployment target...
+call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\api-routes.js" "%DEPLOYMENT_TARGET%\api-routes.js" /Y
+IF !ERRORLEVEL! NEQ 0 goto error
+
+echo Copying api-test.html to deployment target...
+call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\api-test.html" "%DEPLOYMENT_TARGET%\api-test.html" /Y
 IF !ERRORLEVEL! NEQ 0 goto error
 
 :: 5. KuduSync - Copy build files to deployment target
