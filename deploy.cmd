@@ -51,15 +51,19 @@ echo Copying web.config to deployment target...
 call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\web.config" "%DEPLOYMENT_TARGET%\web.config"
 IF !ERRORLEVEL! NEQ 0 goto error
 
-:: 4. Copy server.js to deployment target
-echo Copying server.js to deployment target...
+:: 4. Copy server.js and server directory to deployment target
+echo Copying server.js and server directory to deployment target...
 call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\server.js" "%DEPLOYMENT_TARGET%\server.js"
 IF !ERRORLEVEL! NEQ 0 goto error
 
-:: 5. Install minimal server dependencies
-echo Installing minimal server dependencies...
+echo Copying server directory...
+call :ExecuteCmd xcopy /Y /E /I "%DEPLOYMENT_SOURCE%\server" "%DEPLOYMENT_TARGET%\server"
+IF !ERRORLEVEL! NEQ 0 goto error
+
+:: 5. Install all server dependencies
+echo Installing all server dependencies...
 call :ExecuteCmd cd "%DEPLOYMENT_TARGET%"
-call :ExecuteCmd npm install express path --save
+call :ExecuteCmd npm install express path cors dotenv mssql uuid --save
 IF !ERRORLEVEL! NEQ 0 goto error
 
 :: Finished successfully
