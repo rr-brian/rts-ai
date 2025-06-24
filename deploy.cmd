@@ -63,36 +63,31 @@ IF EXIST "%DEPLOYMENT_SOURCE%\server" (
   IF !ERRORLEVEL! NEQ 0 goto error
 )
 
-:: 5. Install all server dependencies
-echo Installing all server dependencies...
+:: 5. Create a package.json file in the deployment target
+echo Creating package.json in the deployment target...
 call :ExecuteCmd cd "%DEPLOYMENT_TARGET%"
 
-echo Installing express...
-call :ExecuteCmd npm install express --save
-IF !ERRORLEVEL! NEQ 0 goto error
+echo { > package.json
+echo   "name": "rts-ai", >> package.json
+echo   "version": "1.0.0", >> package.json
+echo   "description": "RTS AI Chatbot", >> package.json
+echo   "main": "server.js", >> package.json
+echo   "dependencies": { >> package.json
+echo     "express": "^4.18.2", >> package.json
+echo     "path": "^0.12.7", >> package.json
+echo     "cors": "^2.8.5", >> package.json
+echo     "dotenv": "^16.3.1", >> package.json
+echo     "mssql": "^9.1.1", >> package.json
+echo     "uuid": "^9.0.0" >> package.json
+echo   }, >> package.json
+echo   "engines": { >> package.json
+echo     "node": "^20.0.0" >> package.json
+echo   } >> package.json
+echo } >> package.json
 
-echo Installing path...
-call :ExecuteCmd npm install path --save
-IF !ERRORLEVEL! NEQ 0 goto error
-
-echo Installing cors...
-call :ExecuteCmd npm install cors --save
-IF !ERRORLEVEL! NEQ 0 goto error
-
-echo Installing dotenv...
-call :ExecuteCmd npm install dotenv --save
-IF !ERRORLEVEL! NEQ 0 goto error
-
-echo Installing mssql...
-call :ExecuteCmd npm install mssql@latest --save
-IF !ERRORLEVEL! NEQ 0 (
-  echo Failed to install mssql with latest version, trying specific version...
-  call :ExecuteCmd npm install mssql@9.1.1 --save
-  IF !ERRORLEVEL! NEQ 0 goto error
-)
-
-echo Installing uuid...
-call :ExecuteCmd npm install uuid --save
+:: 6. Install all server dependencies
+echo Installing all server dependencies...
+call :ExecuteCmd npm install --production
 IF !ERRORLEVEL! NEQ 0 goto error
 
 :: Finished successfully
