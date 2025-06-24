@@ -1,12 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useMsal } from '@azure/msal-react';
 import ReactMarkdown from 'react-markdown';
 import { sendMessageToAzureOpenAI } from '../services/azureOpenAI';
 import '../App.css';
 
 function Home() {
+  const { accounts } = useMsal();
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
+  const [totalTokens, setTotalTokens] = useState(0);
+
+  // Save conversation to database
+  const saveConversation = async (messageList) => {
+    try {
+      const userId = accounts[0]?.username || 'anonymous';
+      const userEmail = accounts[0]?.username || '';
+      
+      // Estimate token usage (rough approximation: ~4 chars per token)
+      const estimatedTokens = messageList.reduce((total, msg) => {
+        return total + Math.ceil(msg.content.length / 4);
+      }, 0);
+      
+      setTotalTokens(estimatedTokens);
+      
+      const response = await fetch('/api/conversations/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          conversationId,
+          userId,
+          userEmail,
+          chatType: 'general',
+          messages: messageList,
+          totalTokens: estimatedTokens,
+          metadata: {
+            userAgent: navigator.userAgent,
+            timestamp: new Date().toISOString()
+          }
+        })
+      });
+      
+      const data = await response.json();
+      
+      // If this is a new conversation, store the ID
+      if (!conversationId && data.conversationId) {
+        setConversationId(data.conversationId);
+      }
+    } catch (error) {
+      console.error('Error saving conversation:', error);
+      // Non-blocking error - we don't want to interrupt the user experience
+      // if conversation saving fails
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -14,27 +63,36 @@ function Home() {
     
     // Add user message to chat history
     const userMessage = { role: 'user', content: message };
-    setChatHistory([...chatHistory, userMessage]);
+    const updatedHistory = [...chatHistory, userMessage];
+    setChatHistory(updatedHistory);
     setMessage('');
     setIsLoading(true);
     
     try {
-      // Prepare the messages array for the API call
-      // Include conversation history for context
-      const messages = [...chatHistory, userMessage];
+      // Save conversation with user message
+      await saveConversation(updatedHistory);
       
       // Call Azure OpenAI service
-      const aiResponse = await sendMessageToAzureOpenAI(messages);
+      const aiResponse = await sendMessageToAzureOpenAI(updatedHistory);
       
       // Add AI response to chat history
-      setChatHistory(prev => [...prev, aiResponse]);
+      const finalHistory = [...updatedHistory, aiResponse];
+      setChatHistory(finalHistory);
+      
+      // Save conversation with AI response
+      await saveConversation(finalHistory);
     } catch (error) {
       console.error('Error getting AI response:', error);
       // Add error message to chat history
-      setChatHistory(prev => [...prev, {
+      const errorMessage = {
         role: 'assistant',
         content: `Sorry, I encountered an error: ${error.message || 'Unknown error'}`
-      }]);
+      };
+      const finalHistory = [...updatedHistory, errorMessage];
+      setChatHistory(finalHistory);
+      
+      // Save conversation with error message
+      await saveConversation(finalHistory);
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { MsalProvider, AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from '@azure/msal-react';
 import { PublicClientApplication } from '@azure/msal-browser';
 import './App.css';
@@ -7,6 +7,7 @@ import './App.css';
 // Import pages
 import Home from './pages/Home';
 import Legal from './pages/Legal';
+import Admin from './pages/Admin';
 import AccessDenied from './pages/AccessDenied';
 
 // Import auth configuration
@@ -14,6 +15,29 @@ import { msalConfig } from './auth/authConfig';
 
 // Initialize MSAL instance
 const msalInstance = new PublicClientApplication(msalConfig);
+
+// Role-based access control wrapper component
+function RequireAuth({ children }) {
+  const { accounts } = useMsal();
+  
+  // Check if user is authenticated
+  if (!accounts || accounts.length === 0) {
+    return <Navigate to="/access-denied" replace />;
+  }
+  
+  // Check if user has admin role
+  // You can customize this logic based on your role implementation
+  const userRoles = accounts[0]?.idTokenClaims?.roles || [];
+  const isAdmin = userRoles.includes('Admin') || 
+                 userRoles.includes('admin') || 
+                 accounts[0]?.username === 'worthington.brian@realtyts.com';
+  
+  if (!isAdmin) {
+    return <Navigate to="/access-denied" replace />;
+  }
+  
+  return children;
+}
 
 function App() {
   // Handle login
@@ -58,12 +82,20 @@ function App() {
               <li><Link to="/" className="nav-link">HR</Link></li>
               <li><Link to="/" className="nav-link">Omaha</Link></li>
               <li><Link to="/" className="nav-link">DSC</Link></li>
+              <AuthenticatedTemplate>
+                <li><Link to="/admin" className="nav-link admin-link">Admin</Link></li>
+              </AuthenticatedTemplate>
             </ul>
           </nav>
           
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/legal" element={<Legal />} />
+            <Route path="/admin" element={
+              <RequireAuth>
+                <Admin />
+              </RequireAuth>
+            } />
             <Route path="/access-denied" element={<AccessDenied />} />
           </Routes>
           
