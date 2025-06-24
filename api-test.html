@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .endpoint {
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .endpoint h3 {
+            margin-top: 0;
+        }
+        .result {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow: auto;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .status {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Endpoint Test Page</h1>
+    <p>Use this page to test the API endpoints and verify they're returning JSON responses.</p>
+    
+    <div class="endpoint">
+        <h3>/api/health</h3>
+        <button onclick="testEndpoint('/api/health')">Test Health Endpoint</button>
+        <div id="health-status" class="status"></div>
+        <div id="health-result" class="result"></div>
+    </div>
+    
+    <div class="endpoint">
+        <h3>/api/debug-routes</h3>
+        <button onclick="testEndpoint('/api/debug-routes')">Test Debug Routes Endpoint</button>
+        <div id="debug-routes-status" class="status"></div>
+        <div id="debug-routes-result" class="result"></div>
+    </div>
+    
+    <div class="endpoint">
+        <h3>/api/test-sql</h3>
+        <button onclick="testEndpoint('/api/test-sql')">Test SQL Connection Endpoint</button>
+        <div id="test-sql-status" class="status"></div>
+        <div id="test-sql-result" class="result"></div>
+    </div>
+    
+    <div class="endpoint">
+        <h3>/test</h3>
+        <button onclick="testEndpoint('/test')">Test Simple Endpoint</button>
+        <div id="test-status" class="status"></div>
+        <div id="test-result" class="result"></div>
+    </div>
+
+    <script>
+        function testEndpoint(endpoint) {
+            const endpointId = endpoint.replace(/\//g, '-').substring(1);
+            const statusElement = document.getElementById(`${endpointId}-status`);
+            const resultElement = document.getElementById(`${endpointId}-result`);
+            
+            statusElement.textContent = 'Testing...';
+            statusElement.className = 'status';
+            resultElement.textContent = '';
+            
+            fetch(endpoint)
+                .then(response => {
+                    const contentType = response.headers.get('content-type');
+                    const isJson = contentType && contentType.includes('application/json');
+                    const status = response.status;
+                    
+                    statusElement.textContent = `Status: ${status}, Content-Type: ${contentType || 'unknown'}`;
+                    statusElement.className = status >= 200 && status < 300 ? 'status success' : 'status error';
+                    
+                    if (isJson) {
+                        return response.json().then(data => {
+                            resultElement.textContent = JSON.stringify(data, null, 2);
+                            return { isJson: true, data };
+                        });
+                    } else {
+                        return response.text().then(text => {
+                            resultElement.textContent = text.substring(0, 1000) + (text.length > 1000 ? '...' : '');
+                            return { isJson: false, text };
+                        });
+                    }
+                })
+                .catch(error => {
+                    statusElement.textContent = `Error: ${error.message}`;
+                    statusElement.className = 'status error';
+                    resultElement.textContent = error.stack || error.toString();
+                });
+        }
+    </script>
+</body>
+</html>
