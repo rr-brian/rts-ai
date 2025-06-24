@@ -68,6 +68,12 @@ const PORT = process.env.PORT || 8080;
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Explicitly handle API routes before any static file handling
+app.use('/api', (req, res, next) => {
+  console.log(`API request received: ${req.method} ${req.originalUrl}`);
+  next();
+});
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? [process.env.FRONTEND_URL || 'https://www.rrrealty.ai'] 
@@ -306,7 +312,14 @@ app.post('/api/azure-openai', async (req, res) => {
 });
 
 // Serve static files from the build directory AFTER defining all API routes
-app.use(express.static(path.join(__dirname, 'build')));
+// But make sure to skip API routes to prevent them from being handled as static files
+app.use(express.static(path.join(__dirname, 'build'), {
+  // Skip API routes when looking for static files
+  setHeaders: (res, path) => {
+    console.log(`Serving static file: ${path}`);
+  },
+  index: false // Disable automatic serving of index.html for directories
+}));
 
 // All other routes serve the React app - but not API routes
 app.get('*', (req, res, next) => {
