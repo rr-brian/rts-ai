@@ -98,11 +98,11 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-// Serve static files from the build directory
-app.use(express.static(path.join(__dirname, 'build')));
+// Define all API routes first, before any static file serving or SPA fallback
 
 // Create an endpoint to expose environment variables to the client
 app.get('/api/react-config', (req, res) => {
+  console.log('React config endpoint called');
   res.json({
     REACT_APP_AZURE_OPENAI_ENDPOINT: process.env.REACT_APP_AZURE_OPENAI_ENDPOINT,
     REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME: process.env.REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME,
@@ -114,6 +114,7 @@ app.get('/api/react-config', (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+  console.log('Health check endpoint called');
   res.json({ status: 'ok', env: process.env.NODE_ENV, timestamp: new Date().toISOString() });
 });
 
@@ -141,6 +142,34 @@ app.get('/api/config', (req, res) => {
 
 // API routes
 app.use('/api/conversations', conversationsRouter);
+
+// Diagnostic endpoint to help debug routing issues
+app.get('/api/debug-routes', (req, res) => {
+  console.log('Debug routes endpoint called');
+  // Return information about the request and environment
+  res.json({
+    timestamp: new Date().toISOString(),
+    request: {
+      url: req.url,
+      method: req.method,
+      path: req.path,
+      headers: req.headers
+    },
+    environment: {
+      NODE_ENV: process.env.NODE_ENV,
+      PORT: process.env.PORT || 8080
+    },
+    apiEndpoints: [
+      '/api/react-config',
+      '/api/health',
+      '/api/config',
+      '/api/conversations',
+      '/api/test-sql',
+      '/api/azure-openai',
+      '/api/debug-routes'
+    ]
+  });
+});
 
 // Test SQL endpoint
 app.get('/api/test-sql', async (req, res) => {
@@ -268,6 +297,9 @@ app.post('/api/azure-openai', async (req, res) => {
     res.status(500).json({ error: 'An error occurred while processing your request' });
   }
 });
+
+// Serve static files from the build directory AFTER defining all API routes
+app.use(express.static(path.join(__dirname, 'build')));
 
 // All other routes serve the React app - but not API routes
 app.get('*', (req, res, next) => {
