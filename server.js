@@ -75,10 +75,26 @@ app.use(cors({
   credentials: true
 }));
 
-// Simple request logging
+// Log all requests
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  console.log('Headers:', JSON.stringify(req.headers));
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}` + 
+    `Headers: ${JSON.stringify(req.headers)}`);
+  next();
+});
+
+// Add detailed API logging
+app.use('/api', (req, res, next) => {
+  console.log(`API Request: ${req.method} ${req.url}`);
+  const originalSend = res.send;
+  res.send = function(body) {
+    console.log(`API Response for ${req.method} ${req.url}: Status ${res.statusCode}`);
+    if (typeof body === 'string' && body.length < 1000) {
+      console.log(`Response body: ${body}`);
+    } else {
+      console.log('Response body too large to log');
+    }
+    return originalSend.call(this, body);
+  };
   next();
 });
 
@@ -101,8 +117,81 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', env: process.env.NODE_ENV, timestamp: new Date().toISOString() });
 });
 
+// Config endpoint
+app.get('/api/config', (req, res) => {
+  console.log('Config endpoint called');
+  // Return a safe subset of configuration (no secrets)
+  res.json({
+    apiEndpoints: {
+      conversations: '/api/conversations',
+      azureOpenAI: '/api/azure-openai'
+    },
+    auth: {
+      enabled: !!process.env.AZURE_AD_CLIENT_ID,
+      provider: 'azure-ad'
+    },
+    features: {
+      sqlEnabled: !!process.env.SQL_SERVER,
+      openaiEnabled: !!process.env.AZURE_OPENAI_KEY
+    },
+    environment: process.env.NODE_ENV || 'production',
+    version: '1.0.0'
+  });
+});
+
 // API routes
 app.use('/api/conversations', conversationsRouter);
+
+// Test SQL endpoint
+app.get('/api/test-sql', async (req, res) => {
+  console.log('Test SQL endpoint called');
+  try {
+    // Try to load our mssql wrapper
+    const sql = require('./server/lib/mssql-wrapper');
+    console.log('SQL module loaded:', typeof sql);
+    
+    // Test if we can connect
+    const config = {
+      user: process.env.SQL_USER,
+      password: process.env.SQL_PASSWORD,
+      server: process.env.SQL_SERVER,
+      database: process.env.SQL_DATABASE,
+      options: {
+        encrypt: true,
+        trustServerCertificate: false
+      }
+    };
+    
+    console.log('Attempting SQL connection with config:', {
+      user: config.user,
+      server: config.server,
+      database: config.database
+    });
+    
+    await sql.connect(config);
+    console.log('SQL connection successful');
+    
+    // Create a simple test query
+    const request = new sql.Request();
+    const result = await request.query('SELECT 1 as TestValue');
+    console.log('SQL query result:', result);
+    
+    await sql.close();
+    
+    res.status(200).json({
+      status: 'success',
+      message: 'SQL connection test successful',
+      result: result
+    });
+  } catch (error) {
+    console.error('SQL test error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'SQL connection test failed',
+      error: error.message
+    });
+  }
+});
 
 // Azure OpenAI proxy endpoint
 app.post('/api/azure-openai', async (req, res) => {
