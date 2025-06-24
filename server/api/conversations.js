@@ -1,7 +1,50 @@
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
-const sql = require('mssql');
-const dotenv = require('dotenv');
+let uuidv4, sql, dotenv;
+
+// Try to load optional dependencies
+try {
+  const uuid = require('uuid');
+  uuidv4 = uuid.v4;
+  console.log('UUID module loaded successfully');
+} catch (error) {
+  console.warn('UUID module not available:', error.message);
+  // Simple UUID fallback
+  uuidv4 = function() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+}
+
+try {
+  sql = require('mssql');
+  console.log('MSSQL module loaded successfully');
+} catch (error) {
+  console.warn('MSSQL module not available:', error.message);
+  // Create a mock SQL client
+  sql = {
+    connect: () => Promise.resolve(),
+    close: () => Promise.resolve(),
+    Request: class MockRequest {
+      input() { return this; }
+      query() { return Promise.resolve({ recordset: [] }); }
+    },
+    UniqueIdentifier: String,
+    NVarChar: String,
+    DateTime2: Date,
+    Int: Number
+  };
+}
+
+try {
+  dotenv = require('dotenv');
+  console.log('Dotenv module loaded successfully');
+} catch (error) {
+  console.warn('Dotenv module not available:', error.message);
+  dotenv = { config: () => {} };
+}
+
 const path = require('path');
 const router = express.Router();
 

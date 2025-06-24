@@ -84,8 +84,12 @@ call :ExecuteCmd npm install dotenv --save
 IF !ERRORLEVEL! NEQ 0 goto error
 
 echo Installing mssql...
-call :ExecuteCmd npm install mssql --save
-IF !ERRORLEVEL! NEQ 0 goto error
+call :ExecuteCmd npm install mssql@latest --save
+IF !ERRORLEVEL! NEQ 0 (
+  echo Failed to install mssql with latest version, trying specific version...
+  call :ExecuteCmd npm install mssql@9.1.1 --save
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
 
 echo Installing uuid...
 call :ExecuteCmd npm install uuid --save
