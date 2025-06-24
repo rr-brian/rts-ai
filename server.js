@@ -1,24 +1,62 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const cors = require('cors');
-const conversationsRouter = require('./server/api/conversations');
+
+// Try to load optional modules
+let cors;
+try {
+  cors = require('cors');
+  console.log('CORS module loaded successfully');
+} catch (error) {
+  console.warn('CORS module not available, will use Express fallback');
+  // Create a simple CORS middleware fallback
+  cors = function(options) {
+    return function(req, res, next) {
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      
+      if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+      }
+      next();
+    };
+  };
+}
+
+// Load conversations router with error handling
+let conversationsRouter;
+try {
+  conversationsRouter = require('./server/api/conversations');
+  console.log('Conversations router loaded successfully');
+} catch (error) {
+  console.warn('Conversations router not available:', error.message);
+  // Create a simple router fallback
+  conversationsRouter = express.Router();
+  conversationsRouter.get('/', (req, res) => {
+    res.json({ error: 'Conversations API not available' });
+  });
+}
 
 // Load environment variables from .env file
 try {
-  const fs = require('fs');
-  const path = require('path');
-  const dotenv = require('dotenv');
-  
-  // Check if .env file exists and load it
-  const envPath = path.resolve(__dirname, '.env');
-  
-  if (fs.existsSync(envPath)) {
-    // Load environment variables using dotenv
-    dotenv.config({ path: envPath });
-    console.log('Environment variables loaded from .env file');
-  } else {
-    console.log('No .env file found, using environment variables from the system');
+  // Try to load dotenv
+  try {
+    const dotenv = require('dotenv');
+    
+    // Check if .env file exists and load it
+    const envPath = path.resolve(__dirname, '.env');
+    
+    if (fs.existsSync(envPath)) {
+      // Load environment variables using dotenv
+      dotenv.config({ path: envPath });
+      console.log('Environment variables loaded from .env file');
+    } else {
+      console.log('No .env file found, using environment variables from the system');
+    }
+  } catch (dotenvError) {
+    console.warn('Dotenv module not available:', dotenvError.message);
+    console.log('Using environment variables from the system');
   }
 } catch (error) {
   console.warn('Error loading environment variables:', error.message);
@@ -86,34 +124,58 @@ app.post('/api/azure-openai', async (req, res) => {
     // Construct the API URL
     const apiUrl = `${endpoint}openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`;
     
-    // Make the API request
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': apiKey
-      },
-      body: JSON.stringify({
-        messages,
-        max_tokens: max_tokens || 800,
-        temperature: temperature || 0.7,
-        top_p: 0.95,
-        frequency_penalty: 0,
-        presence_penalty: 0,
-        stop: null
-      })
-    });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return res.status(response.status).json({ 
-        error: `API request failed: ${data.error?.message || response.statusText}` 
+    // Check if fetch is available (Node.js 18+)
+    let fetchFunction;
+    try {
+      // Use global fetch if available (Node.js 18+)
+      if (typeof fetch === 'function') {
+        fetchFunction = fetch;
+        console.log('Using global fetch API');
+      } else {
+        // Try to require node-fetch as fallback
+        try {
+          fetchFunction = require('node-fetch');
+          console.log('Using node-fetch module');
+        } catch (fetchError) {
+          throw new Error('Neither global fetch nor node-fetch is available');
+        }
+      }
+      
+      // Make the API request
+      const response = await fetchFunction(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': apiKey
+        },
+        body: JSON.stringify({
+          messages,
+          max_tokens: max_tokens || 800,
+          temperature: temperature || 0.7,
+          top_p: 0.95,
+          frequency_penalty: 0,
+          presence_penalty: 0,
+          stop: null
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        return res.status(response.status).json({ 
+          error: `API request failed: ${data.error?.message || response.statusText}` 
+        });
+      }
+      
+      res.json(data);
+    } catch (fetchError) {
+      console.error('Fetch error:', fetchError.message);
+      return res.status(500).json({ 
+        error: `Fetch API error: ${fetchError.message}` 
       });
     }
-    
-    res.json(data);
   } catch (error) {
+    console.error('General error:', error.message);
     res.status(500).json({ error: 'An error occurred while processing your request' });
   }
 });
