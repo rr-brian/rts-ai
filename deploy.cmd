@@ -75,17 +75,7 @@ echo Copying api-test.html to deployment target...
 call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\api-test.html" "%DEPLOYMENT_TARGET%\api-test.html" /Y
 IF !ERRORLEVEL! NEQ 0 goto error
 
-echo Copying openai-test.html to deployment target...
-IF EXIST "%DEPLOYMENT_SOURCE%\openai-test.html" (
-  call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\openai-test.html" "%DEPLOYMENT_TARGET%\openai-test.html" /Y
-  IF !ERRORLEVEL! NEQ 0 goto error
-)
-
-echo Copying local-test.html to deployment target...
-IF EXIST "%DEPLOYMENT_SOURCE%\local-test.html" (
-  call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\local-test.html" "%DEPLOYMENT_TARGET%\local-test.html" /Y
-  IF !ERRORLEVEL! NEQ 0 goto error
-)
+echo Test files have been removed after successful debugging
 
 :: 5. KuduSync - Copy build files to deployment target
 echo Syncing build files to deployment target...

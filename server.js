@@ -164,17 +164,7 @@ app.get('/test', (req, res) => {
   res.send('Test endpoint is working');
 });
 
-// Serve local-test.html for API testing
-app.get('/local-test', (req, res) => {
-  console.log('Local test page requested');
-  res.sendFile(path.join(__dirname, 'local-test.html'));
-});
-
-// Serve openai-test.html for testing the Azure OpenAI API
-app.get('/openai-test', (req, res) => {
-  console.log('OpenAI test page requested');
-  res.sendFile(path.join(__dirname, 'openai-test.html'));
-});
+// API test endpoints have been removed after successful debugging
 
 // Diagnostic endpoint to help debug routing issues
 app.get('/api/debug-routes', (req, res) => {
