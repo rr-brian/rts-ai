@@ -41,38 +41,42 @@ IF NOT EXIST "%DEPLOYMENT_SOURCE%\build" (
 
 echo Using pre-built React app from build directory...
 
-:: 2. KuduSync - Copy build files to deployment target
+:: 2. Create the deployment target directory structure first
+echo Creating deployment target directory structure...
+IF NOT EXIST "%DEPLOYMENT_TARGET%" (
+  call :ExecuteCmd mkdir "%DEPLOYMENT_TARGET%"
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
+
+:: 3. Copy server.js, server directory first (API routes take priority)
+echo Copying server.js and server directory first...
+
+echo Copying server.js
+call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\server.js" "%DEPLOYMENT_TARGET%\server.js" /Y
+IF !ERRORLEVEL! NEQ 0 goto error
+
+echo Creating server directory
+IF NOT EXIST "%DEPLOYMENT_TARGET%\server" (
+  call :ExecuteCmd mkdir "%DEPLOYMENT_TARGET%\server"
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
+
+echo Copying server directory contents
+call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\server" "%DEPLOYMENT_TARGET%\server" /E /Y
+IF !ERRORLEVEL! NEQ 0 goto error
+
+:: 4. Copy web.config file (critical for routing)
+echo Copying web.config to deployment target...
+call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\web.config" "%DEPLOYMENT_TARGET%\web.config" /Y
+IF !ERRORLEVEL! NEQ 0 goto error
+
+:: 5. KuduSync - Copy build files to deployment target
 echo Syncing build files to deployment target...
 call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%DEPLOYMENT_SOURCE%\build" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.hg;.deployment;deploy.cmd;node_modules"
 IF !ERRORLEVEL! NEQ 0 goto error
 
-:: 3. Copy web.config to deployment target
-echo Copying web.config to deployment target...
-call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\web.config" "%DEPLOYMENT_TARGET%\web.config"
-IF !ERRORLEVEL! NEQ 0 goto error
-
-:: 4. Copy server.js, server directory, and node_modules
-echo Copying server.js, server directory, and node_modules...
-
-IF EXIST "%DEPLOYMENT_TARGET%\server.js" (
-  echo server.js already exists, skipping copy
-) ELSE (
-  echo Copying server.js
-  call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\server.js" "%DEPLOYMENT_TARGET%\" /Y
-  IF !ERRORLEVEL! NEQ 0 goto error
-)
-
-IF EXIST "%DEPLOYMENT_TARGET%\server" (
-  echo server directory already exists, skipping copy
-) ELSE (
-  echo Creating server directory
-  call :ExecuteCmd mkdir "%DEPLOYMENT_TARGET%\server"
-  IF !ERRORLEVEL! NEQ 0 goto error
-  
-  echo Copying server directory contents
-  call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\server" "%DEPLOYMENT_TARGET%\server" /E /Y
-  IF !ERRORLEVEL! NEQ 0 goto error
-)
+:: 6. Copy node_modules
+echo Copying node_modules...
 
 echo Copying node_modules directory
 IF EXIST "%DEPLOYMENT_SOURCE%\node_modules" (
