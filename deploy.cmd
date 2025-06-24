@@ -57,13 +57,38 @@ call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\server.js" "%DEPLOYMENT_TARGET%\serve
 IF !ERRORLEVEL! NEQ 0 goto error
 
 echo Copying server directory...
-call :ExecuteCmd xcopy /Y /E /I "%DEPLOYMENT_SOURCE%\server" "%DEPLOYMENT_TARGET%\server"
-IF !ERRORLEVEL! NEQ 0 goto error
+IF EXIST "%DEPLOYMENT_SOURCE%\server" (
+  call :ExecuteCmd mkdir "%DEPLOYMENT_TARGET%\server"
+  call :ExecuteCmd xcopy /Y /E "%DEPLOYMENT_SOURCE%\server\*" "%DEPLOYMENT_TARGET%\server\"
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
 
 :: 5. Install all server dependencies
 echo Installing all server dependencies...
 call :ExecuteCmd cd "%DEPLOYMENT_TARGET%"
-call :ExecuteCmd npm install express path cors dotenv mssql uuid --save
+
+echo Installing express...
+call :ExecuteCmd npm install express --save
+IF !ERRORLEVEL! NEQ 0 goto error
+
+echo Installing path...
+call :ExecuteCmd npm install path --save
+IF !ERRORLEVEL! NEQ 0 goto error
+
+echo Installing cors...
+call :ExecuteCmd npm install cors --save
+IF !ERRORLEVEL! NEQ 0 goto error
+
+echo Installing dotenv...
+call :ExecuteCmd npm install dotenv --save
+IF !ERRORLEVEL! NEQ 0 goto error
+
+echo Installing mssql...
+call :ExecuteCmd npm install mssql --save
+IF !ERRORLEVEL! NEQ 0 goto error
+
+echo Installing uuid...
+call :ExecuteCmd npm install uuid --save
 IF !ERRORLEVEL! NEQ 0 goto error
 
 :: Finished successfully
