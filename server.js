@@ -38,23 +38,161 @@ app.use('/api', apiRoutes);
 // This can be removed once the modular structure is fully deployed to Azure
 app.post('/api/conversations/update', async (req, res) => {
   console.log('TEMPORARY direct handler for /api/conversations/update called');
-  // Skip the router and implement the endpoint directly
+  
+  // Direct implementation of the conversations update endpoint
   try {
-  } catch (error) {
-    console.error('Error loading conversations router:', error);
-    
-    // Fall back to direct implementation
+    // Load required modules directly
+    let sql, uuidv4;
     try {
-      const { userId, userEmail, chatType, messages, totalTokens, metadata } = req.body;
-      const conversationId = req.body.conversationId || require('uuid').v4();
+      // Try to load the SQL wrapper
+      sql = require('./server/lib/mssql-wrapper');
+    } catch (sqlError) {
+      console.error('Failed to load SQL wrapper:', sqlError);
+      // Create a basic mock if we can't load the real one
+      sql = {
+        connect: () => Promise.resolve(),
+        close: () => Promise.resolve(),
+        Request: class {
+          constructor() { this.inputs = {}; }
+          input(name, type, value) { this.inputs[name] = value; return this; }
+          query() { return Promise.resolve({ recordset: [] }); }
+        },
+        UniqueIdentifier: String,
+        NVarChar: String,
+        DateTime2: Date,
+        Int: Number
+      };
+    }
+    
+    try {
+      // Try to load UUID module
+      const uuid = require('uuid');
+      uuidv4 = uuid.v4;
+    } catch (uuidError) {
+      console.error('Failed to load UUID module:', uuidError);
+      // Simple UUID fallback
+      uuidv4 = function() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      };
+    }
+    
+    // SQL Server configuration from environment variables
+    const config = {
+      user: process.env.SQL_USER,
+      password: process.env.SQL_PASSWORD,
+      server: process.env.SQL_SERVER,
+      database: process.env.SQL_DATABASE,
+      options: {
+        encrypt: true,
+        trustServerCertificate: false,
+        enableArithAbort: true
+      },
+      connectionTimeout: 30000,
+      requestTimeout: 30000
+    };
+    
+    // Connect to SQL Server
+    await sql.connect(config);
+    
+    const { 
+      conversationId, 
+      userId, 
+      userEmail, 
+      chatType, 
+      messages, 
+      totalTokens, 
+      metadata 
+    } = req.body;
+    
+    console.log('Request body received:', { conversationId, userId, userEmail, chatType });
+    
+    if (!messages || !Array.isArray(messages)) {
+      console.error('Invalid messages format:', messages);
+      return res.status(400).json({ error: 'Invalid messages format' });
+    }
+    
+    const lastUserMessage = messages
+      .filter(m => m.role === 'user')
+      .pop()?.content || '';
       
-      console.log('Creating/updating conversation with ID:', conversationId);
+    const lastAssistantMessage = messages
+      .filter(m => m.role === 'assistant')
+      .pop()?.content || '';
+    
+    const request = new sql.Request();
+    
+    if (conversationId) {
+      // Update existing conversation
+      await request
+        .input('ConversationId', sql.UniqueIdentifier, conversationId)
+        .input('LastUpdated', sql.DateTime2, new Date())
+        .input('MessageCount', sql.Int, messages.length)
+        .input('TotalTokens', sql.Int, totalTokens || 0)
+        .input('ConversationState', sql.NVarChar, JSON.stringify(messages))
+        .input('LastUserMessage', sql.NVarChar, lastUserMessage)
+        .input('LastAssistantMessage', sql.NVarChar, lastAssistantMessage)
+        .input('Metadata', sql.NVarChar, JSON.stringify(metadata || {}))
+        .query(`
+          UPDATE Conversations
+          SET LastUpdated = @LastUpdated,
+              MessageCount = @MessageCount,
+              TotalTokens = @TotalTokens,
+              ConversationState = @ConversationState,
+              LastUserMessage = @LastUserMessage,
+              LastAssistantMessage = @LastAssistantMessage,
+              Metadata = @Metadata
+          WHERE ConversationId = @ConversationId
+        `);
+        
+      res.status(200).json({ conversationId });
+    } else {
+      // Create new conversation
+      const newConversationId = uuidv4();
       
-      // Just return the conversation ID for now (we'll implement actual DB saving later)
-      res.status(req.body.conversationId ? 200 : 201).json({ conversationId });
-    } catch (fallbackError) {
-      console.error('Error in fallback handler:', fallbackError);
-      res.status(500).json({ error: 'Failed to process conversation', details: fallbackError.message });
+      await request
+        .input('ConversationId', sql.UniqueIdentifier, newConversationId)
+        .input('UserId', sql.NVarChar, userId || 'anonymous')
+        .input('UserEmail', sql.NVarChar, userEmail || '')
+        .input('ChatType', sql.NVarChar, chatType || 'general')
+        .input('LastUpdated', sql.DateTime2, new Date())
+        .input('StartTime', sql.DateTime2, new Date())
+        .input('MessageCount', sql.Int, messages.length)
+        .input('TotalTokens', sql.Int, totalTokens || 0)
+        .input('ConversationState', sql.NVarChar, JSON.stringify(messages))
+        .input('LastUserMessage', sql.NVarChar, lastUserMessage)
+        .input('LastAssistantMessage', sql.NVarChar, lastAssistantMessage)
+        .input('Metadata', sql.NVarChar, JSON.stringify(metadata || {}))
+        .query(`
+          INSERT INTO Conversations (
+            ConversationId, UserId, UserEmail, ChatType, LastUpdated, StartTime,
+            MessageCount, TotalTokens, ConversationState, LastUserMessage, 
+            LastAssistantMessage, Metadata
+          )
+          VALUES (
+            @ConversationId, @UserId, @UserEmail, @ChatType, @LastUpdated, @StartTime,
+            @MessageCount, @TotalTokens, @ConversationState, @LastUserMessage,
+            @LastAssistantMessage, @Metadata
+          )
+        `);
+        
+      res.status(201).json({ conversationId: newConversationId });
+    }
+  } catch (error) {
+    console.error('Error updating conversation:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Request body:', req.body);
+    res.status(500).json({ error: 'Failed to update conversation', details: error.message });
+  } finally {
+    // Close the SQL connection if it exists
+    try {
+      if (sql && typeof sql.close === 'function') {
+        await sql.close();
+      }
+    } catch (err) {
+      console.error('Error closing SQL connection:', err);
     }
   }
 });
