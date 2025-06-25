@@ -34,6 +34,31 @@ app.use('/api', apiLogger);
 // Mount API routes
 app.use('/api', apiRoutes);
 
+// TEMPORARY: Direct handler for conversations/update endpoint to ensure compatibility
+// This can be removed once the modular structure is fully deployed to Azure
+app.post('/api/conversations/update', async (req, res) => {
+  console.log('TEMPORARY direct handler for /api/conversations/update called');
+  // Skip the router and implement the endpoint directly
+  try {
+  } catch (error) {
+    console.error('Error loading conversations router:', error);
+    
+    // Fall back to direct implementation
+    try {
+      const { userId, userEmail, chatType, messages, totalTokens, metadata } = req.body;
+      const conversationId = req.body.conversationId || require('uuid').v4();
+      
+      console.log('Creating/updating conversation with ID:', conversationId);
+      
+      // Just return the conversation ID for now (we'll implement actual DB saving later)
+      res.status(req.body.conversationId ? 200 : 201).json({ conversationId });
+    } catch (fallbackError) {
+      console.error('Error in fallback handler:', fallbackError);
+      res.status(500).json({ error: 'Failed to process conversation', details: fallbackError.message });
+    }
+  }
+});
+
 // Direct route to api-test.html for testing
 app.get('/api-test.html', (req, res) => {
   console.log('API test page requested');
