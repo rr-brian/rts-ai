@@ -83,6 +83,13 @@
         <div id="test-status" class="status"></div>
         <div id="test-result" class="result"></div>
     </div>
+    
+    <div class="endpoint">
+        <h3>/api/conversations/update</h3>
+        <button onclick="testConversationsUpdate()">Test Conversations Update Endpoint</button>
+        <div id="api-conversations-update-status" class="status"></div>
+        <div id="api-conversations-update-result" class="result"></div>
+    </div>
 
     <script>
         function testEndpoint(endpoint) {
@@ -133,6 +140,66 @@
                     statusElement.className = 'status error';
                     resultElement.textContent = error.stack || error.toString();
                 });
+        }
+        
+        function testConversationsUpdate() {
+            const statusElement = document.getElementById('api-conversations-update-status');
+            const resultElement = document.getElementById('api-conversations-update-result');
+            
+            statusElement.textContent = 'Testing...';
+            statusElement.className = 'status';
+            resultElement.textContent = '';
+            
+            // Create a test conversation payload
+            const payload = {
+                conversationId: null, // null for new conversation
+                userId: 'test-user',
+                userEmail: 'test@example.com',
+                chatType: 'general',
+                messages: [
+                    { role: 'user', content: 'Hello, this is a test message' },
+                    { role: 'assistant', content: 'Hello! This is a test response.' }
+                ],
+                totalTokens: 25,
+                metadata: {
+                    userAgent: navigator.userAgent,
+                    timestamp: new Date().toISOString(),
+                    testRun: true
+                }
+            };
+            
+            fetch('/api/conversations/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                const isJson = contentType && contentType.includes('application/json');
+                const status = response.status;
+                
+                statusElement.textContent = `Status: ${status}, Content-Type: ${contentType || 'unknown'}`;
+                statusElement.className = status >= 200 && status < 300 ? 'status success' : 'status error';
+                
+                if (isJson) {
+                    return response.json().then(data => {
+                        resultElement.textContent = JSON.stringify(data, null, 2);
+                        return { isJson: true, data };
+                    });
+                } else {
+                    return response.text().then(text => {
+                        resultElement.textContent = text.substring(0, 1000) + (text.length > 1000 ? '...' : '');
+                        return { isJson: false, text };
+                    });
+                }
+            })
+            .catch(error => {
+                statusElement.textContent = `Error: ${error.message}`;
+                statusElement.className = 'status error';
+                resultElement.textContent = error.stack || error.toString();
+            });
         }
     </script>
 </body>

@@ -64,7 +64,7 @@ try {
 }
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
@@ -107,6 +107,9 @@ app.use('/api', (req, res, next) => {
 });
 
 // Define all API routes first, before any static file serving or SPA fallback
+
+// Mount the conversations router
+app.use('/api/conversations', conversationsRouter);
 
 // Create an endpoint to expose environment variables to the client
 app.get('/api/react-config', (req, res) => {
@@ -256,6 +259,12 @@ app.post('/api/azure-openai', async (req, res) => {
     console.error('Error in Azure OpenAI proxy:', error);
     res.status(500).json({ error: 'Failed to process Azure OpenAI request', message: error.message });
   }
+});
+
+// Serve api-test.html directly
+app.get('/api-test.html', (req, res) => {
+  console.log('Serving api-test.html');
+  res.sendFile(path.join(__dirname, 'api-test.html'));
 });
 
 // Test SQL endpoint
