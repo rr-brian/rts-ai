@@ -29,30 +29,56 @@ function Home() {
       const apiBaseUrl = process.env.REACT_APP_API_URL || window.location.origin;
       console.log('Using API base URL:', apiBaseUrl);
       
-      const response = await fetch(`${apiBaseUrl}/api/conversations/update`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          conversationId,
-          userId,
-          userEmail,
-          chatType: 'general',
-          messages: messageList,
-          totalTokens: estimatedTokens,
-          metadata: {
-            userAgent: navigator.userAgent,
-            timestamp: new Date().toISOString()
-          }
-        })
-      });
+      // Prepare the request payload
+      const payload = {
+        conversationId,
+        userId,
+        userEmail,
+        chatType: 'general',
+        messages: messageList,
+        totalTokens: estimatedTokens,
+        metadata: {
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString()
+        }
+      };
       
-      const data = await response.json();
+      // Try the main endpoint first
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/conversations/update`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // If this is a new conversation, store the ID
+        if (!conversationId && data.conversationId) {
+          setConversationId(data.conversationId);
+        }
+        return;
+      } catch (primaryError) {
+        console.warn('Primary endpoint failed, using fallback:', primaryError);
+        // Continue to fallback
+      }
       
-      // If this is a new conversation, store the ID
-      if (!conversationId && data.conversationId) {
-        setConversationId(data.conversationId);
+      // If we're still here, the primary endpoint failed
+      // Generate a client-side ID if needed
+      if (!conversationId) {
+        // Simple UUID generation
+        const newId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+        setConversationId(newId);
+        console.log('Generated client-side conversation ID:', newId);
       }
     } catch (error) {
       console.error('Error saving conversation:', error);
