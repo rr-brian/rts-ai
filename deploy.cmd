@@ -65,6 +65,42 @@ echo Copying server directory contents
 call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\server" "%DEPLOYMENT_TARGET%\server" /E /Y
 IF !ERRORLEVEL! NEQ 0 goto error
 
+:: 3.1 Copy new modular directories (config, middleware, routes)
+echo Copying modular directories...
+
+:: Copy config directory
+echo Creating config directory
+IF NOT EXIST "%DEPLOYMENT_TARGET%\config" (
+  call :ExecuteCmd mkdir "%DEPLOYMENT_TARGET%\config"
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
+
+echo Copying config directory contents
+call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\config" "%DEPLOYMENT_TARGET%\config" /E /Y
+IF !ERRORLEVEL! NEQ 0 goto error
+
+:: Copy middleware directory
+echo Creating middleware directory
+IF NOT EXIST "%DEPLOYMENT_TARGET%\middleware" (
+  call :ExecuteCmd mkdir "%DEPLOYMENT_TARGET%\middleware"
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
+
+echo Copying middleware directory contents
+call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\middleware" "%DEPLOYMENT_TARGET%\middleware" /E /Y
+IF !ERRORLEVEL! NEQ 0 goto error
+
+:: Copy routes directory
+echo Creating routes directory
+IF NOT EXIST "%DEPLOYMENT_TARGET%\routes" (
+  call :ExecuteCmd mkdir "%DEPLOYMENT_TARGET%\routes"
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
+
+echo Copying routes directory contents
+call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\routes" "%DEPLOYMENT_TARGET%\routes" /E /Y
+IF !ERRORLEVEL! NEQ 0 goto error
+
 :: 4. Copy web.config file and other critical files (api-routes.js, api-test.html)
 echo Copying web.config to deployment target...
 call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\web.config" "%DEPLOYMENT_TARGET%\web.config" /Y
